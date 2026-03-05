@@ -6,7 +6,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 permissions:
   contents: read
@@ -20,14 +19,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Set image name (lowercase)
+        run: echo "IMAGE_NAME=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Log in to GitHub Container Registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
       - name: Build Docker image
-        run: docker build -t $IMAGE_NAME:latest .
+        run: docker build -t "$IMAGE_NAME:latest" .
 
       - name: Push Docker image
-        run: docker push $IMAGE_NAME:latest
+        run: docker push "$IMAGE_NAME:latest"
 
       - name: Setup SSH
         run: |
@@ -37,8 +39,6 @@ jobs:
           ssh-keyscan 172.189.185.50 >> ~/.ssh/known_hosts
 
       - name: Deploy via SSH (docker compose)
-        env:
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
           ssh simpo@172.189.185.50 << EOF
             cd /home/simpo/test_react

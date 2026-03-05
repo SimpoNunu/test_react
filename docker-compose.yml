@@ -1,0 +1,10 @@
+services:
+  web:
+    image: ghcr.io/simpo/boutique-next:latest
+    container_name: boutique-next
+    restart: always
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.production
+

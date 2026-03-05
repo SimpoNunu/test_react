@@ -1,0 +1,48 @@
+name: Build & deploy (Docker) to simpo server
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ env.REGISTRY }}/${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build Docker image
+        run: docker build -t $IMAGE_NAME:latest .
+
+      - name: Push Docker image
+        run: docker push $IMAGE_NAME:latest
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY_SIMPO }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan 172.189.185.50 >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH (docker compose)
+        env:
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+        run: |
+          ssh simpo@172.189.185.50 << EOF
+            cd /home/simpo/test_react
+            sed -i "s@ghcr.io/.*/boutique-next:latest@${IMAGE_NAME}:latest@g" docker-compose.yml
+            docker compose pull
+            docker compose up -d
+          EOF

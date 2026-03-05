@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ env.REGISTRY }}/${{ github.repository }}
+  IMAGE_NAME: ghcr.io/${{ github.repository }}
 
 permissions:
   contents: read
@@ -41,7 +41,7 @@ jobs:
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
         run: |
           ssh simpo@172.189.185.50 << EOF
-            cd /home/simpo/test_react
+            cd /home/SimpoNunu/test_react
             sed -i "s@ghcr.io/.*/boutique-next:latest@${IMAGE_NAME}:latest@g" docker-compose.yml
             docker compose pull
             docker compose up -d
